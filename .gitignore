@@ -1,3 +1,12 @@
+#Data Directories produced by script
+rawdata/
+calibrated/
+calibrated_noBG/
+
+#Data Files
+*.dat
+*.poni
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
