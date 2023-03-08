@@ -26,7 +26,7 @@ def create_filenames(start,stop, datapath="./"):
 
 def main():
     
-    plt.clf()
+    #plt.clf()
     
     datapath = "Z:/Klaus/Data/LipidNanoparticles/SAXS/221125_MessungBNT/rawdata"
     calib_path = "Z:/Klaus/Data/LipidNanoparticles/SAXS/221125_MessungBNT/calibrated"

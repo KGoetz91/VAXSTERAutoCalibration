@@ -15,10 +15,20 @@ import numpy as np
 from numbers import Number
 from scipy.optimize import curve_fit
 
+from matplotlib.colors import LogNorm
+
 import os
 
 def linear_function(x, m, b):
     return m*x+b
+
+def gaussian(x,x0,sigma,area,const):
+    
+    prefactor = area/np.sqrt(2*np.pi*sigma*sigma)
+    exponent = -0.5*np.power(((x-x0)/sigma),2)
+    gaussian = prefactor*np.exp(exponent)+const
+    
+    return gaussian
 
 def lin_interpolate(x1,y1,e1,x2,y2,e2,x_det):
   a = (y2-y1)/(x2-x1)
@@ -168,26 +178,71 @@ class TwoDDataset:
         self.integrator = pyFAI.load(poni)
         if not mask == None:
             self.mask = self._load_mask(mask)
+    
+    def direct_beam(self):
+        x_projection = self.imageData.sum(0)
+        y_projection = self.imageData.sum(1)
+        
+        x_initial = np.argmax(x_projection)
+        x_max = x_projection[x_initial]
+        y_initial = np.argmax(y_projection)
+        y_max = y_projection[y_initial]
+        
+        x_0 = [x_initial, 0.5, x_max, 0]
+        y_0 = [y_initial, 0.5, y_max, 0]
+        
+        x_bins = np.arange(0,len(x_projection),1)
+        y_bins = np.arange(0,len(y_projection),1)
+        
+        x_f, x_cov = curve_fit(gaussian, x_bins, x_projection, p0=x_0)
+        y_f, y_cov = curve_fit(gaussian, y_bins, y_projection, p0=y_0)
+        
+        # plt.clf()
+        # fig, axes = plt.subplots(2,2)
+        # axes[0][0].plot(y_bins,y_projection)
+        # axes[0][0].plot(y_bins,gaussian(y_bins, *y_f))
+        # axes[0][0].set_xlim((y_initial-10,y_initial+10))
+        # axes[1][1].plot(x_bins,x_projection)
+        # axes[1][1].plot(x_bins,gaussian(x_bins, *x_f))
+        # axes[1][1].set_xlim((x_initial-10,x_initial+10))
+        # axes[0][1].imshow(self.imageData[y_initial-10:y_initial+10,x_initial-10:x_initial+10])
+        # plt.show()
+        
+        return (x_f[0],y_f[0]),(x_f[1],y_f[1])
         
     def plotImage(self):
-        plt.clf()
-        plt.imshow(np.log10(self.imageData))
-        plt.show()
+        plt.imshow(self.imageData,norm=LogNorm())
         
     def plotMask(self):
         if type(self.mask)!=None:
             plt.imshow(self.mask)
         
-    def calculateSum(self):
-        if type(self.mask) != None:
-            inverseMask = np.where(self.mask == 0, 1,0)
-            sumImage = np.multiply(inverseMask, self.imageData).flatten()
-            #sumImage = sumImage[sumImage != 0]
-            #imageSize = sumImage.size
+    def calculateSum(self, mask=None):
+        if type(mask) == type(None):
+            if type(self.mask) != type(None):
+                inverseMask = np.where(self.mask == 0, 1,0)
+                sumImage = np.multiply(inverseMask, self.imageData).flatten()
+            else:
+                sumImage = sumImage[sumImage >= 0]
+        elif type(mask) == type(self.imageData):
+            if mask.shape==self.imageData.shape:
+                inverseMask = np.where(mask == 0, 1,0)
+                sumImage = np.multiply(inverseMask, self.imageData)
+                sumImage = sumImage.flatten()
+            else:
+                raise ValueError('Mask needs to be of same shape as Image.')
         else:
-            sumImage = sumImage[sumImage >= 0]
+            raise ValueError('Mask needs to be numpy array.')
         imageSum = np.sum(sumImage)
         return imageSum
+    
+    def scatteringIntensity(self):
+        mask = np.array(self.mask)
+        (x,y),(sigx,sigy)=self.direct_beam()
+        print(x,y,sigx,sigy)
+        mask[int(y)-int(sigy):int(y)+int(sigy)+2,int(x)-int(sigx):int(x)+int(sigx)+2] = 1
+        scat_inte = self.calculateSum(mask)
+        return scat_inte
     
     def integrateImage(self, bins=425):
         if type(self.mask)!=None:
@@ -389,13 +444,19 @@ class TwoDReducer():
                          '#Integrate with pyFAI using poni File\n')
         
         for i, frame in enumerate(self.frames):
+            
+            scattering_intensity = frame.scatteringIntensity()
+            scattering_intensity_first_frame = 1
             calibFactor = self.cf[i]/(self.times[i]*self.thickness[i]*self.transmission_counts)
             frameDC = self.times[i]*self.darkCurrent[i]
             frameDCerror = np.sqrt(self.times[i])*self.darkCurrent[i]
             tempFrame = (frame.sub(frameDC,frameDCerror)).mul(calibFactor)
+            # tempFrame.direct_beam()
             if i == 0:
+                scattering_intensity_first_frame=scattering_intensity
                 totalSumImage = tempFrame
             else:
+                tempFrame = tempFrame.mul(scattering_intensity_first_frame/scattering_intensity)
                 totalSumImage = totalSumImage.add(tempFrame)
         
         totalSumImage = totalSumImage.mul(1/len(self.frames))
