@@ -431,26 +431,6 @@ def create_filenames(start,stop):
 
 def main():
 
-    plt.clf()
-    
-    calib_dir = "calibrated"
-    calib_noBG_dir = "calibrated_noBG"
-    
-    if not os.path.isdir(calib_dir):
-        os.makedirs(calib_dir)
-    if not os.path.isdir(calib_noBG_dir):
-        os.makedirs(calib_noBG_dir)
-
-    #GC SAXS
-    data_files = create_filenames(88183, 88183)
-    TM_file = r"./rawdata/latest_0088182_craw.tiff"
-    DB_file = r"./rawdata/latest_0088191_craw.tiff"
-    
-                                               #time  d   CF      poni       mask
-    ds = TwoDReducer("GC SAXS", data_files,TM_file,DB_file,300, 0.1, 4.25e6, "./GC_saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
-    res = ds.getOneD()
-    # plt.loglog(res.x,res.y,label="GC SAXS measured") 
-
     #GC WAXS
     data_files = create_filenames(88190, 88190)
     TM_file = r"./rawdata/latest_0088189_craw.tiff"
@@ -470,88 +450,88 @@ def main():
     # plt.show()
 
     #Ref mit Zucker SAXS
-    data_files = create_filenames(88248, 88259)
-    TM_file = r"./rawdata/latest_0088247_craw.tiff"
-    DB_file = r"./rawdata/latest_0088191_craw.tiff"
+    # data_files = create_filenames(88248, 88259)
+    # TM_file = r"./rawdata/latest_0088247_craw.tiff"
+    # DB_file = r"./rawdata/latest_0088191_craw.tiff"
     
-                                                                        #time  d   CF      poni       mask
-    ds = TwoDReducer("Ref mit Zucker SAXS",data_files,TM_file,DB_file,3600, 0.1, 4.25e6, "./saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+    #                                                                     #time  d   CF      poni       mask
+    # ds = TwoDReducer("Ref mit Zucker SAXS",data_files,TM_file,DB_file,3600, 0.1, 4.25e6, "./saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    bg_saxs = ds.getOneD()
-    bg_saxs.write_data_AA(r"./calibrated/RefZucker_saxs_AA.dat")
-    plt.loglog(bg_saxs.x,bg_saxs.y,label="Ref Zucker SAXS")    
+    # bg_saxs = ds.getOneD()
+    # bg_saxs.write_data_AA(r"./calibrated/RefZucker_saxs_AA.dat")
+    # plt.loglog(bg_saxs.x,bg_saxs.y,label="Ref Zucker SAXS")    
     
-    #Ref mit Zucker WAXS
-    data_files = create_filenames(88229, 88230)
-    TM_file = r"./rawdata/latest_0088228_craw.tiff"
-    DB_file = r"./rawdata/latest_0088188_craw.tiff"
+    # #Ref mit Zucker WAXS
+    # data_files = create_filenames(88229, 88230)
+    # TM_file = r"./rawdata/latest_0088228_craw.tiff"
+    # DB_file = r"./rawdata/latest_0088188_craw.tiff"
     
-                                                #time  d   CF      poni       mask
-    ds = TwoDReducer("Ref mit Zucker WAXS",data_files,TM_file,DB_file,3600, 0.1, 5e4, "./waxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+    #                                             #time  d   CF      poni       mask
+    # ds = TwoDReducer("Ref mit Zucker WAXS",data_files,TM_file,DB_file,3600, 0.1, 5e4, "./waxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    bg_waxs = ds.getOneD()
-    bg_waxs.write_data_AA(r"./calibrated/RefZucker_waxs_AA.dat")
-    plt.loglog(bg_waxs.x,bg_waxs.y,label="Ref Zucker WAXS")  
+    # bg_waxs = ds.getOneD()
+    # bg_waxs.write_data_AA(r"./calibrated/RefZucker_waxs_AA.dat")
+    # plt.loglog(bg_waxs.x,bg_waxs.y,label="Ref Zucker WAXS")  
     
-    #BNT3 SAXS
-    data_files = create_filenames(88213, 88224)
-    TM_file = r"./rawdata/latest_0088212_craw.tiff"
-    DB_file = r"./rawdata/latest_0088191_craw.tiff"
+    # #BNT3 SAXS
+    # data_files = create_filenames(88213, 88224)
+    # TM_file = r"./rawdata/latest_0088212_craw.tiff"
+    # DB_file = r"./rawdata/latest_0088191_craw.tiff"
     
-                                                #time  d   CF      poni       mask
-    ds = TwoDReducer("BNT 3 SAXS", data_files,TM_file,DB_file,3600, 0.1, 4.25e6, "./saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+    #                                             #time  d   CF      poni       mask
+    # ds = TwoDReducer("BNT 3 SAXS", data_files,TM_file,DB_file,3600, 0.1, 4.25e6, "./saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    res = ds.getOneD()
-    res.write_data_AA(r"./calibrated/BNT3_saxs_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT3 SAXS")    
-    res = res-bg_saxs
-    res.write_data_AA(r"./calibrated_noBG/BNT3_saxs_noBG_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT3 no BG SAXS")    
+    # res = ds.getOneD()
+    # res.write_data_AA(r"./calibrated/BNT3_saxs_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT3 SAXS")    
+    # res = res-bg_saxs
+    # res.write_data_AA(r"./calibrated_noBG/BNT3_saxs_noBG_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT3 no BG SAXS")    
     
-    #BNT2 WAXS
-    data_files = create_filenames(88194, 88195)
-    TM_file = r"./rawdata/latest_0088193_craw.tiff"
-    DB_file = r"./rawdata/latest_0088188_craw.tiff"
+    # #BNT2 WAXS
+    # data_files = create_filenames(88194, 88195)
+    # TM_file = r"./rawdata/latest_0088193_craw.tiff"
+    # DB_file = r"./rawdata/latest_0088188_craw.tiff"
     
-                                                #time  d   CF      poni       mask
-    ds = TwoDReducer("BNT 2 WAXS", data_files,TM_file,DB_file,3600, 0.1, 5e4, "./waxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+    #                                             #time  d   CF      poni       mask
+    # ds = TwoDReducer("BNT 2 WAXS", data_files,TM_file,DB_file,3600, 0.1, 5e4, "./waxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    res = ds.getOneD()
-    res.write_data_AA(r"./calibrated/BNT2_waxs_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT2 WAXS")    
-    res = res-bg_waxs
-    res.write_data_AA(r"./calibrated_noBG/BNT2_waxs_noBG_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT2 no BG WAXS")    
+    # res = ds.getOneD()
+    # res.write_data_AA(r"./calibrated/BNT2_waxs_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT2 WAXS")    
+    # res = res-bg_waxs
+    # res.write_data_AA(r"./calibrated_noBG/BNT2_waxs_noBG_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT2 no BG WAXS")    
     
-    #BNT2 SAXS
-    data_files = create_filenames(88197, 88208)
-    TM_file = r"./rawdata/latest_0088196_craw.tiff"
-    DB_file = r"./rawdata/latest_0088191_craw.tiff"
+    # #BNT2 SAXS
+    # data_files = create_filenames(88197, 88208)
+    # TM_file = r"./rawdata/latest_0088196_craw.tiff"
+    # DB_file = r"./rawdata/latest_0088191_craw.tiff"
     
-                                                #time  d   CF      poni       mask
-    ds = TwoDReducer("BNT 2 SAXS", data_files,TM_file,DB_file,3600, 0.1, 4.25e6, "./saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+    #                                             #time  d   CF      poni       mask
+    # ds = TwoDReducer("BNT 2 SAXS", data_files,TM_file,DB_file,3600, 0.1, 4.25e6, "./saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    res = ds.getOneD()
-    res.write_data_AA(r"./calibrated/BNT2_saxs_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT2 SAXS")    
-    res = res-bg_saxs
-    res.write_data_AA(r"./calibrated_noBG/BNT2_saxs_noBG_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT2 no BG SAXS")    
+    # res = ds.getOneD()
+    # res.write_data_AA(r"./calibrated/BNT2_saxs_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT2 SAXS")    
+    # res = res-bg_saxs
+    # res.write_data_AA(r"./calibrated_noBG/BNT2_saxs_noBG_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT2 no BG SAXS")    
     
-    #BNT3 WAXS
-    data_files = create_filenames(88210, 88211)
-    TM_file = r"./rawdata/latest_0088209_craw.tiff"
-    DB_file = r"./rawdata/latest_0088188_craw.tiff"
+    # #BNT3 WAXS
+    # data_files = create_filenames(88210, 88211)
+    # TM_file = r"./rawdata/latest_0088209_craw.tiff"
+    # DB_file = r"./rawdata/latest_0088188_craw.tiff"
     
-                                                #time  d   CF      poni       mask
-    ds = TwoDReducer("BNT 3 WAXS", data_files,TM_file,DB_file,3600, 0.1, 5e4, "./waxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+    #                                             #time  d   CF      poni       mask
+    # ds = TwoDReducer("BNT 3 WAXS", data_files,TM_file,DB_file,3600, 0.1, 5e4, "./waxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    res = ds.getOneD()
-    res.write_data_AA(r"./calibrated/BNT3_waxs_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT3 WAXS")    
-    res = res-bg_waxs
-    res.write_data_AA(r"./calibrated_noBG/BNT3_waxs_noBG_AA.dat")
-    plt.loglog(res.x,res.y,label="BNT3 no BG WAXS")   
+    # res = ds.getOneD()
+    # res.write_data_AA(r"./calibrated/BNT3_waxs_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT3 WAXS")    
+    # res = res-bg_waxs
+    # res.write_data_AA(r"./calibrated_noBG/BNT3_waxs_noBG_AA.dat")
+    # plt.loglog(res.x,res.y,label="BNT3 no BG WAXS")   
     
     plt.legend()
     plt.show()
