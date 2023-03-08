@@ -42,16 +42,16 @@ def main():
     TM_file = r"./rawdata/latest_0088182_craw.tiff"
     DB_file = r"./rawdata/latest_0088191_craw.tiff"
     
-                                               #time  d   CF      poni       mask
-    ds = reducer.TwoDReducer("GC SAXS", data_files,TM_file,DB_file,300, 0.1, 4.25e6, "./GC_saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+    #                                                     TM time     time  d   CF      poni       mask
+    ds = reducer.TwoDReducer("GC SAXS", data_files,TM_file,60,DB_file,300, 0.1, 7.1e4, "./GC_saxs_poni.poni", mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
     res = ds.getOneD()
     plt.loglog(res.x,res.y,label="GC SAXS measured") 
 
     #GC APS 
     x,y = load_data(r"./GC_APS.dat")
     plt.loglog(x,y,label="GC APS") 
-    plt.xlim([2e-1,3])
-    plt.ylim([5,40])
+    plt.xlim([0.9e-1,3])
+    plt.ylim([5,110])
     plt.legend()
     plt.show()
 

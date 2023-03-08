@@ -80,7 +80,13 @@ class Transmission:
     def __init__(self,DB,data,mask,poni):
         self.DBImage = TwoDDataset(DB, poni,mask)
         self.transmissionImage = TwoDDataset(data, poni,mask)
-        
+    
+    def tm_counts(self):
+        return self.transmissionImage.calculateSum()
+    
+    def db_counts(self):
+        return self.DBImage.calculateSum()
+    
     def transmission(self):
         return self.transmissionImage.calculateSum()/self.DBImage.calculateSum()
 
@@ -358,18 +364,19 @@ class TwoDReducer():
                          '#Calibration Factor: {}\n'.format(list(self.cf))+
                          '#Dark Current [cts/s/px]: {}+-{}\n'.format(list(self.darkCurrent),list(self.dcError)))
         
-    def __init__(self,sample_name, dataFiles, transmissionFile, directBeamFile, time, thickness, CF, poni,
+    def __init__(self,sample_name, dataFiles, transmissionFile, transmission_time, directBeamFile, time, thickness, CF, poni,
                  darkCurrent=6.275e-5,dcError=0.010431667, mask=None, header=''):
         self._header = header
         self._init_parameters(dataFiles, poni, mask, time, thickness, CF, sample_name, darkCurrent,dcError)
         self._header += '#Direct Beam File: {}\n'.format(directBeamFile)
         self._header += '#Transmission Measurement File: {}\n'.format(transmissionFile)
         
-        self.transmission = Transmission(directBeamFile, transmissionFile, mask, poni).transmission()
+        self.transmission = Transmission(directBeamFile, transmissionFile, mask, poni)
+        self.transmission_counts = self.transmission.tm_counts()/transmission_time
         self.dbIntensity = TwoDDataset(directBeamFile, poni, mask).calculateSum()
         
         self._header += '#Direct Beam Intensity[cts]: {}\n'.format(self.dbIntensity)
-        self._header += '#Transmission: {}\n'.format(self.transmission)
+        self._header += '#Transmission: {}\n'.format(self.transmission.transmission())
         
         self.reduceData()
         
@@ -377,12 +384,12 @@ class TwoDReducer():
         totalSumImage = None
         
         self._header += ('#Reduction Steps:\n'+
-                         '#For each Frame frame: (frame-darkCurrent)*calibractionFactor/(measurement time*directBeamIntensity*thickness*transmission)\n'+
+                         '#For each Frame frame: (frame-darkCurrent)*calibractionFactor/(measurement time*thickness*transmission counts per second)\n'+
                          '#Sum up all frames, divide by number of frames\n'+
                          '#Integrate with pyFAI using poni File\n')
         
         for i, frame in enumerate(self.frames):
-            calibFactor = self.cf[i]/(self.dbIntensity*self.times[i]*self.thickness[i]*self.transmission)
+            calibFactor = self.cf[i]/(self.times[i]*self.thickness[i]*self.transmission_counts)
             frameDC = self.times[i]*self.darkCurrent[i]
             frameDCerror = np.sqrt(self.times[i])*self.darkCurrent[i]
             tempFrame = (frame.sub(frameDC,frameDCerror)).mul(calibFactor)
