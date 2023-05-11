@@ -48,10 +48,12 @@ def spline_data(x0, data):
   e2 = []
 
   for x in x0:
-    eq_ind = np.where(x1==x)
-    if len(eq_ind[0]) == 1:
-      y2.append(y1[eq_ind[0][0]])
-      e2.append(e1[eq_ind[0][0]])
+    eps = x*1e-4
+    diff = np.abs(np.subtract(x1,x))
+    if diff.min() < eps:
+      eq_ind = np.argmin(diff)
+      y2.append(y1[eq_ind])
+      e2.append(e1[eq_ind])
     else:
       min_ind = np.where(x1<x)[0]
       max_ind = np.where(x1>x)[0]
@@ -85,11 +87,258 @@ def spline_data(x0, data):
     
   return x0,y2,e2
 
+class BaseOneDDataSet:
+    
+    def __mul__(self,value):
+        if isinstance(value,Number):
+            self._header += "#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
+            self.y = self.y*value
+            return self
+        else:
+            raise ValueError('Only numbers are possible.')
+    
+    def spline(self,x1,y1,x2,y2):
+        
+        x_min = max(min(x1),min(x2))
+        x_max = min(max(x1),max(x2))
+        
+        y1_new = np.where(x1 >= x_min, y1, None)
+        y1_new = np.where(x1 <= x_max, y1_new, None)
+        y1_new = y1_new[y1_new != None]
+        x1_new = x1[x1>=x_min]
+        x1_new = x1_new[x1_new<=x_max]
+        
+        y_spline = []
+        
+        x_spline, y_spline, e_spline = spline_data(x1_new,[x2,y2,y2])
+        
+        return x_spline,y1_new,y_spline
+
+    def make_linear(self, x_min=(-1)*np.inf, x_max=np.inf):
+        min_limit = x_min if x_min > min(self.x) else min(self.x)
+        max_limit = x_max if x_max < max(self.x) else max(self.x)
+        
+        y0 = self.y[self.x<min_limit]
+        y1 = self.y[self.x>min_limit]
+        x1 = self.x[self.x>min_limit]
+        y1 = y1[x1<max_limit]
+        x1 = x1[x1<max_limit]
+        y2 = self.y[self.x>max_limit]
+        x0 = self.x[self.x<min_limit]
+        x2 = self.x[self.x>max_limit]
+
+        m_0 = y1[-1]-y1[0]
+        b_0 = y1[0]-m_0*x1[0]
+        p_0 = [m_0, b_0]
+        p_best, cov = curve_fit(linear_function, x1, y1, p0=p_0)
+        y1 = linear_function(x1, *p_best)
+        
+        self.x = np.array(list(x0)+list(x1)+list(x2))
+        self.y = np.array(list(y0)+list(y1)+list(y2))
+    
+    def make_horizontal(self, value, x_min=(-1)*np.inf, x_max=np.inf):
+        min_limit = x_min if x_min > min(self.x) else min(self.x)
+        max_limit = x_max if x_max < max(self.x) else max(self.x)
+        
+        y0 = self.y[self.x<min_limit]
+        y1 = self.y[self.x>min_limit]
+        x1 = self.x[self.x>min_limit]
+        y1 = y1[x1<max_limit]
+        x1 = x1[x1<max_limit]
+        y2 = self.y[self.x>max_limit]
+        x0 = self.x[self.x<min_limit]
+        x2 = self.x[self.x>max_limit]
+
+        y1 = [value for i in y1]
+        
+        self.x = np.array(list(x0)+list(x1)+list(x2))
+        self.y = np.array(list(y0)+list(y1)+list(y2))
+    
+    def interpolate(self, x_min=(-1)*np.inf, x_max=np.inf):
+        min_limit = x_min if x_min > min(self.x) else min(self.x)
+        max_limit = x_max if x_max < max(self.x) else max(self.x)
+        
+        y0 = self.y[self.x<min_limit]
+        y1 = self.y[self.x>min_limit]
+        x1 = self.x[self.x>min_limit]
+        y1 = y1[x1<max_limit]
+        x1 = x1[x1<max_limit]
+        y2 = self.y[self.x>max_limit]
+        x0 = self.x[self.x<min_limit]
+        x2 = self.x[self.x>max_limit]
+        
+        m0 = (y1[-1]-y1[0])/(x1[-1]-x1[0])
+        b0 = 0.5*(y1[-1]+y1[0]-m0*(x1[-1]+x1[0]))
+        p0 = [m0, b0]
+        
+        p_opt, pcov = curve_fit(linear_function,x1,y1,p0)
+        y_opt = linear_function(x1, *p_opt)
+        self.x = np.array(list(x0)+list(x1)+list(x2))
+        self.y = np.array(list(y0)+list(y_opt)+list(y2))
+        
+    def __sub__(self,secondDataset):
+        if issubclass(type(secondDataset),BaseOneDDataSet):
+            self._header += "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset.name)
+            x1 = self.x
+            y1 = self.y
+            e1 = self.error
+            
+            x2 = secondDataset.x
+            y2 = secondDataset.y
+            e2 = secondDataset.error
+            
+            xspline,y3,y4 = self.spline(x1,y1,x2,y2)
+            self.y = np.subtract(y3,y4)
+            self.x = xspline
+            
+        elif isinstance(secondDataset, Number):
+            self._header += "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset)
+            self.y = self.y-secondDataset
+        else:
+            raise ValueError('Subtraction only defined for numbers and other 1D-Datasets')
+        return self
+    
+    def __add__(self,secondDataset):
+        if issubclass(type(secondDataset),BaseOneDDataSet):
+            self._header += "#Arithmetic operation addition: {}+{}\n".format(self.name, secondDataset.name)
+            x1 = self.x
+            y1 = self.y
+            
+            x2 = secondDataset.x
+            y2 = secondDataset.y
+            
+            xspline,y3,y4 = self.spline(x1,y1,x2,y2)
+                
+            self.y = np.add(y3,y4)
+            self.x = xspline
+            
+        elif isinstance(secondDataset, Number):
+            self._header += "#Arithmetic operation addition: {}-{}\n".format(self.name, secondDataset)
+            self.y = self.y+secondDataset
+        else:
+            raise ValueError('Subtraction only defined for numbers and other 1D-Datasets')
+        return self
+
+    def __init__(self,x,y,name = '', header='', error=None):
+        self.x = x
+        self.y = y
+        if type(error) == type(None):
+            self.error = np.sqrt(y)
+        else:
+            self.error = error
+        self._header=header
+        self.name = name
+
+    def plot_data(self):
+        plt.clf()
+        plt.plot(self.x,self.y,label=self.name)
+        plt.legend()
+        plt.show()
+
+class OneDLoader(BaseOneDDataSet):
+    def __init__(self,filename):
+        x,y,error,name,header = self.load_data(filename)
+        header += '#Reloaded from file: {}\n'.format(filename)
+        super().__init__(x,y,name=name,header=header,error=error)
+        
+    def load_data(self,filename):
+        
+        header = ''
+        name = ''
+        x = []
+        y = []
+        e = []
+        with open(filename,'r') as inputfile:
+            for line in inputfile:
+                if line.startswith('#'):
+                    header += line
+                    if line.startswith('#Sample:'):
+                        namelist = list(line.strip().split())[1:]
+                        for part in namelist:
+                            name += "{} ".format(part)
+                else:
+                    data = list(line.strip().split())
+                    x.append(float(data[0]))
+                    y.append(float(data[1]))
+                    e.append(float(data[2]))
+        return np.array(x),np.array(y),np.array(e),name, header
+
+    def write_data(self, outputfilename, column_names):
+        data = zip(self.x,self.y,self.error)
+        
+        with open(outputfilename,'w') as outputfile:
+            outputfile.write(self._header)
+            outputfile.write('#Created: {}\n'.format(datetime.now()))
+            outputfile.write(column_names)
+            
+            for line in data:
+                for point in line:
+                    outputfile.write("{}\t".format(point))
+                outputfile.write("\n")
+
+class CapillaryScan(BaseOneDDataSet):
+    
+    def __init__(self,scannumber,scanfile):
+        self.scan_command = ''
+        name = ''
+        x,y,error = self.get_scan_from_file(scannumber,scanfile)
+        for i in self.scan_command:
+            name += "{} ".format(i)
+        super().__init__(x,y,error=error,name=name)
+
+    def cap_thickness(self):
+        
+        x0_guess=self.x[np.argmin(self.y)]
+        sigma_guess=0.25
+        const_guess = np.max(self.y)
+        area_guess = np.min(self.y)-np.max(self.y)
+        start_params = [x0_guess,sigma_guess,
+                        area_guess,const_guess]
+        
+        
+        y_gauss_start = gaussian(self.x, *start_params)
+        params, covarianz = curve_fit(gaussian, self.x, self.y, p0=start_params)
+        print(params)
+        plt.clf()
+        plt.plot(self.x,self.y,label="{}".format(self.name))
+        plt.plot(self.x, y_gauss_start, label='Start values')
+        plt.plot(self.x, gaussian(self.x,*params),label="Fit")
+        plt.legend()
+        plt.show()
+        return 2*params[1]
+
+    def get_scan_from_file(self,scannumber,scanfile):
+        
+        x = []
+        y = []
+        error = []
+        
+        scan_found = False
+        with open(scanfile, 'r') as inputfile:
+            for line in inputfile:
+                if scan_found == False:
+                    if line.startswith('#S {}'.format(scannumber)):
+                        scan_found = True
+                        self.scan_command = list(line.split())[2:]
+                else:
+                    if (not line.startswith('#')) and (len(line.strip())>0):
+                        data = list(line.strip().split())
+                        x.append(float(data[0]))
+                        y.append(float(data[-1]))
+                        error.append(np.sqrt(float(data[-1])))
+                    elif line.startswith('#S'):
+                        break
+
+        return np.array(x),np.array(y),np.array(error)
+                
 class Transmission:
     
     def __init__(self,DB,data,mask,poni):
         self.DBImage = TwoDDataset(DB, poni,mask)
-        self.transmissionImage = TwoDDataset(data, poni,mask)
+        if type(data)==TwoDDataset:
+            self.transmissionImage = data
+        else:
+            self.transmissionImage = TwoDDataset(data, poni,mask)
     
     def tm_counts(self):
         return self.transmissionImage.calculateSum()
@@ -257,120 +506,14 @@ class TwoDDataset:
                                                     unit = "q_nm^-1",variance=np.power(self.errorData,2))
         return result
 
-class OneDDataSet:
-    
-    def __mul__(self,value):
-        if isinstance(value,Number):
-            self._header += "#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
-            self.y = self.y*value
-            return self
-        else:
-            raise ValueError('Only numbers are possible.')
-    
-    def spline(self,x1,y1,x2,y2):
-        
-        x_min = max(min(x1),min(x2))
-        x_max = min(max(x1),max(x2))
-        
-        y1_new = np.where(x1 > x_min, y1, None)
-        y1_new = np.where(x1 < x_max, y1_new, None)
-        y1_new = y1_new[y1_new != None]
-        x1_new = x1[x1>x_min]
-        x1_new = x1_new[x1_new<x_max]
-        
-        y_spline = []
-        
-        x_spline, y_spline, e_spline = spline_data(x1_new,[x2,y2,y2])
-        
-        return x_spline,y1_new,y_spline
-    
-    def make_horizontal(self, value, x_min=(-1)*np.inf, x_max=np.inf):
-        min_limit = x_min if x_min > min(self.x) else min(self.x)
-        max_limit = x_max if x_max < max(self.x) else max(self.x)
-        
-        y0 = self.y[self.x<min_limit]
-        y1 = self.y[self.x>min_limit]
-        x1 = self.x[self.x>min_limit]
-        y1 = y1[x1<max_limit]
-        x1 = x1[x1<max_limit]
-        y2 = self.y[self.x>max_limit]
-        x0 = self.x[self.x<min_limit]
-        x2 = self.x[self.x>max_limit]
-
-        y1 = [value for i in y1]
-        
-        self.x = np.array(list(x0)+list(x1)+list(x2))
-        self.y = np.array(list(y0)+list(y1)+list(y2))
-    
-    def interpolate(self, x_min=(-1)*np.inf, x_max=np.inf):
-        min_limit = x_min if x_min > min(self.x) else min(self.x)
-        max_limit = x_max if x_max < max(self.x) else max(self.x)
-        
-        y0 = self.y[self.x<min_limit]
-        y1 = self.y[self.x>min_limit]
-        x1 = self.x[self.x>min_limit]
-        y1 = y1[x1<max_limit]
-        x1 = x1[x1<max_limit]
-        y2 = self.y[self.x>max_limit]
-        x0 = self.x[self.x<min_limit]
-        x2 = self.x[self.x>max_limit]
-        
-        m0 = (y1[-1]-y1[0])/(x1[-1]-x1[0])
-        b0 = 0.5*(y1[-1]+y1[0]-m0*(x1[-1]+x1[0]))
-        p0 = [m0, b0]
-        
-        p_opt, pcov = curve_fit(linear_function,x1,y1,p0)
-        y_opt = linear_function(x1, *p_opt)
-        self.x = np.array(list(x0)+list(x1)+list(x2))
-        self.y = np.array(list(y0)+list(y_opt)+list(y2))
-        
-    def __sub__(self,secondDataset):
-        if type(secondDataset)==OneDDataSet:
-            self._header += "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset.name)
-            x1 = self.x
-            y1 = self.y
-            
-            x2 = secondDataset.x
-            y2 = secondDataset.y
-            
-            xspline,y3,y4 = self.spline(x1,y1,x2,y2)
-            self.y = np.subtract(y3,y4)
-            self.x = xspline
-            
-        elif isinstance(secondDataset, Number):
-            self._header += "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset)
-            self.y = self.y-secondDataset
-        else:
-            raise ValueError('Subtraction only defined for numbers and other 1D-Datasets')
-        return self
-    
-    def __add__(self,secondDataset):
-        if type(secondDataset)==OneDDataSet:
-            self._header += "#Arithmetic operation addition: {}-{}\n".format(self.name, secondDataset.name)
-            x1 = self.x
-            y1 = self.y
-            
-            x2 = secondDataset.x
-            y2 = secondDataset.y
-            
-            xspline,y3,y4 = self.spline(x1,y1,x2,y2)
-            self.y = np.add(y3,y4)
-            self.x = xspline
-            
-        elif isinstance(secondDataset, Number):
-            self._header += "#Arithmetic operation addition: {}-{}\n".format(self.name, secondDataset)
-            self.y = self.y+secondDataset
-        else:
-            raise ValueError('Subtraction only defined for numbers and other 1D-Datasets')
-        return self
+class OneDDataSet(BaseOneDDataSet):
     
     def __init__(self, pyFAIIntegratorResult, name, header=''):
-        self._header = header
-        self.name = name
         self.completeData = pyFAIIntegratorResult
-        self.x = np.array(pyFAIIntegratorResult[0])
-        self.y = np.array(pyFAIIntegratorResult[1])
-        self.error = np.array(pyFAIIntegratorResult[2])
+        super().__init__(x = np.array(pyFAIIntegratorResult[0]),
+                         y = np.array(pyFAIIntegratorResult[1]),
+                         error = np.array(pyFAIIntegratorResult[2]),
+                         header=header, name=name)
 
     def get_header(self):
         return self._header
@@ -403,7 +546,6 @@ class OneDDataSet:
                     outputfile.write("{}\t".format(point))
                 outputfile.write("\n")
         
-    
 class TwoDReducer():
     
     def _set_calib_parameter(self, ParamName, parameterValue):
@@ -428,6 +570,8 @@ class TwoDReducer():
             self._header += '#{}\n'.format(data_file)
         self._header += '#Poni File: {}\n'.format(poni)
         self.poni = poni
+        self._header += '#Mask File: {}\n'.format(mask)
+        self.mask = mask
         with open(poni, 'r') as poni_file:
             for line in poni_file:
                 self._header += '#{}\n'.format(line.strip())
@@ -451,9 +595,10 @@ class TwoDReducer():
         self._header = header
         self._init_parameters(dataFiles, poni, mask, time, thickness, CF, sample_name, darkCurrent,dcError)
         self._header += '#Direct Beam File: {}\n'.format(directBeamFile)
-        self._header += '#Transmission Measurement File: {}\n'.format(transmissionFile)
         
-        self.transmission = Transmission(directBeamFile, transmissionFile, mask, poni)
+        tf = self.create_transmission(transmissionFile)
+        
+        self.transmission = Transmission(directBeamFile, tf, mask, poni)
         self.transmission_counts = self.transmission.tm_counts()/transmission_time
         self.dbIntensity = TwoDDataset(directBeamFile, poni, mask).calculateSum()
         self.DB = DB
@@ -464,7 +609,21 @@ class TwoDReducer():
         self._header += '#Transmission: {}\n'.format(self.transmission.transmission())
         
         self.reduceData()
+    
+    def create_transmission(self,transmissionFile):
         
+        result = None
+        self._header += '#Transmission Measurement Files:\n'
+        for i, file in enumerate(transmissionFile):
+            self._header += '#\t{}\n'.format(file)
+            if i == 0:
+                result = TwoDDataset(file, self.poni,self.mask)
+            else:
+                result = result.add(TwoDDataset(file, self.poni,self.mask))
+
+        return result
+
+    
     def reduceData(self):
         totalSumImage = None
         
