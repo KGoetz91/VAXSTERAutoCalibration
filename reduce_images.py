@@ -18,6 +18,10 @@ from scipy.optimize import curve_fit
 from matplotlib.colors import LogNorm
 
 import os
+from os.path import isfile
+
+import hdf5plugin
+import h5py
 
 def linear_function(x, m, b):
     return m*x+b
@@ -468,7 +472,27 @@ class TwoDDataset:
     def plotMask(self):
         if type(self.mask)!=None:
             plt.imshow(self.mask)
+    
+    def pixels(self, mask=None):
+        if type(mask) == type(None):
+            if type(self.mask) != type(None):
+                inverseMask = np.where(self.mask == 0, 1,0)
+                sumImage = np.multiply(inverseMask, self.imageData).flatten()
+            else:
+                sumImage = sumImage[sumImage >= 0]
+        elif type(mask) == type(self.imageData):
+            if mask.shape==self.imageData.shape:
+                inverseMask = np.where(mask == 0, 1,0)
+                sumImage = np.multiply(inverseMask, self.imageData)
+                sumImage = sumImage.flatten()
+            else:
+                raise ValueError('Mask needs to be of same shape as Image.')
+        else:
+            raise ValueError('Mask needs to be numpy array.')
+        sumImage = sumImage[sumImage>0]
+        return len(sumImage)
         
+    
     def calculateSum(self, mask=None):
         if type(mask) == type(None):
             if type(self.mask) != type(None):
@@ -559,15 +583,19 @@ class TwoDReducer():
             raise ValueError('{} needs to be a number or list of numbers.'.format(ParamName))
        
     
+    def _load_frames(self,dataFiles,poni,mask):
+        self.frames = []
+        for data_file in dataFiles:
+            self.frames.append(TwoDDataset(data_file, poni,mask))
+            self._header += '#{}\n'.format(data_file)
+        
+    
     def _init_parameters(self,dataFiles, poni, mask, time, thickness, CF, sample_name, darkCurrent,dcError):
         self._header = ('#Sample: {}\n'.format(sample_name)+
                     	'#Data Reduction performed at: {}\n'.format(datetime.now())+
                         '#Working Directory: {}\n'.format(os.getcwd())+
                         '#Data Files:\n')
-        self.frames = []
-        for data_file in dataFiles:
-            self.frames.append(TwoDDataset(data_file, poni,mask))
-            self._header += '#{}\n'.format(data_file)
+        self._load_frames(dataFiles,poni,mask)
         self._header += '#Poni File: {}\n'.format(poni)
         self.poni = poni
         self._header += '#Mask File: {}\n'.format(mask)
@@ -709,8 +737,6 @@ def create_filenames(start,stop):
         
     return result
      
-
-
 def main():
     pass
     
