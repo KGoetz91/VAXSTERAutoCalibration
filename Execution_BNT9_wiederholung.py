@@ -55,18 +55,17 @@ def main():
     # plt.ylim([5,110])
 
 
-    # #Pos 4: Ref mit Zucker SAXS
-    # data_files = create_filenames(89665, 89676,datapath)
-    # TM_file = create_filenames(89664,89664,datapath)[0]
-    # DB_file = create_filenames(89663,89663,datapath)[0]
+    #Pos 4: Ref mit Zucker SAXS
+    data_files = create_filenames(89665, 89676,datapath)
+    TM_file = create_filenames(89664,89664,datapath)
+    DB_file = create_filenames(89663,89663,datapath)[0]
     
-    #                                                                     #time  d   CF      poni       mask
-    # ds = reducer.TwoDReducer("Ref mit Zucker, Position 4",data_files,TM_file,60,DB_file,3600, 0.1, 7.1e4, join(ponipath,"poni.poni"), mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+                                                                        #time  d   CF      poni       mask
+    ds = reducer.TwoDReducer("Ref mit Zucker, Position 4",data_files,TM_file,60,DB_file,3600, 0.1, 7.1e4, join(ponipath,"poni.poni"), mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    # bg_1 = ds.getOneD()
-    # # bg_saxs.make_horizontal(0.0722,0.8)
-    # bg_1.write_data_AA(join(calib_path,"RefZucker_Pos4_AA.dat"))
-    # plt.loglog(bg_1.x,bg_1.y,label="Ref Zucker Pos. 4")    
+    bg_1 = ds.getOneD()
+    bg_1.write_data_AA(join(calib_path,"RefZucker_Pos4_AA.dat"))
+    plt.loglog(bg_1.x,bg_1.y,label="Ref Zucker Pos. 4")    
 
     # #Pos 5: Ref mit Zucker SAXS
     # data_files = create_filenames(89679, 89690,datapath)
@@ -82,8 +81,8 @@ def main():
     # plt.loglog(bg_2.x,bg_2.y,label="Ref Zucker Pos. 5")  
     
     #BNT8 SAXS
-    data_files = create_filenames(89705, 89705,datapath)
-    TM_file = create_filenames(89622,89622,datapath)[0]
+    data_files = create_filenames(89623, 89634,datapath)
+    TM_file = create_filenames(89622,89622,datapath)
     DB_file = create_filenames(89621,89621,datapath)[0]
     
                                                 #time  d   CF      poni       mask
@@ -111,17 +110,17 @@ def main():
     # # res.write_data_AA(join(calib_noBG_path,"BNT9_noBG_AA.dat"))
     # # plt.loglog(res.x,res.y,label="BNT9 no BG SAXS")    
 
-    # #BNT10 SAXS
-    # data_files = create_filenames(89651, 89662,datapath)
-    # TM_file = create_filenames(89650,89650,datapath)[0]
-    # DB_file = create_filenames(89649,89649,datapath)[0]
+    #BNT10 SAXS
+    data_files = create_filenames(89651, 89662,datapath)
+    TM_file = create_filenames(89650,89650,datapath)
+    DB_file = create_filenames(89649,89649,datapath)[0]
     
-    #                                             #time  d   CF      poni       mask
-    # ds = reducer.TwoDReducer("BNT 10", data_files,TM_file,60,DB_file,3600, 0.1, 7.1e4, join(ponipath,"poni.poni"), mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
+                                                #time  d   CF      poni       mask
+    ds = reducer.TwoDReducer("BNT 10", data_files,TM_file,60,DB_file,3600, 0.1, 7.1e4, join(ponipath,"poni.poni"), mask = "./mask_pyFAI.edf", darkCurrent=6.275e-5)
 
-    # res = ds.getOneD()
-    # res.write_data_AA(join(calib_path,"BNT10_AA.dat"))
-    # plt.loglog(res.x,res.y,label="BNT10 SAXS")    
+    res = ds.getOneD()
+    res.write_data_AA(join(calib_path,"BNT10_AA.dat"))
+    plt.loglog(res.x,res.y,label="BNT10 SAXS")    
     # # res = res-bg_saxs
     # # res.write_data_AA(join(calib_noBG_path,"BNT10_noBG_AA.dat"))
     # # plt.loglog(res.x,res.y,label="BNT10 no BG SAXS")    

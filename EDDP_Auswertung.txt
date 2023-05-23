@@ -1,0 +1,80 @@
+File: MPTMS_in_THF000.dat
+FWHM Coordinates: [15.9999995, 29.4999995]
+FWHM: 13.500000000000002
+EDDP Integral: 4.817431846723399
+Rho from Integral: 0.35684680346099246
+Relative Filling assuming only MPTMS: 1.0383860267033342
+Relative Filling assuming only SnS2: 0.29356514040745146
+1.3nm surface density assuming only SnS2: 0.17519092223290886
+1.3nm surface filling assuming only SnS2: 0.1441233245880447
+
+File: 0p5000.dat
+FWHM Coordinates: [19.72869978915, 35.22869978915]
+FWHM: 15.5
+EDDP Integral: 6.935107041606264
+Rho from Integral: 0.4474262607487912
+Relative Filling assuming only MPTMS: 1.301962558261934
+Relative Filling assuming only SnS2: 0.3680816299453215
+1.3nm surface density assuming only SnS2: 0.28953250220778187
+1.3nm surface filling assuming only SnS2: 0.23818806512705493
+
+File: 1p0000.dat
+FWHM Coordinates: [19.72869978915, 35.72869978915]
+FWHM: 16.0
+EDDP Integral: 7.277415376564205
+Rho from Integral: 0.4548384610352628
+Relative Filling assuming only MPTMS: 1.3235312682236022
+Relative Filling assuming only SnS2: 0.37417938280935703
+1.3nm surface density assuming only SnS2: 0.38201588716173374
+1.3nm surface filling assuming only SnS2: 0.3142708480637138
+
+File: 1p5000.dat
+FWHM Coordinates: [19.72869978915, 36.22869978915]
+FWHM: 16.5
+EDDP Integral: 8.950454538036482
+Rho from Integral: 0.5424517901840292
+Relative Filling assuming only MPTMS: 1.5784766841799027
+Relative Filling assuming only SnS2: 0.44625574449640626
+1.3nm surface density assuming only SnS2: 0.4882990965942582
+1.3nm surface filling assuming only SnS2: 0.40170625451096326
+
+File: 2p0000.dat
+FWHM Coordinates: [19.72869978915, 35.72869978915]
+FWHM: 16.0
+EDDP Integral: 8.763426334700014
+Rho from Integral: 0.5477141459187509
+Relative Filling assuming only MPTMS: 1.5937895764616308
+Relative Filling assuming only SnS2: 0.4505848969090224
+1.3nm surface density assuming only SnS2: 0.3700092174043529
+1.3nm surface filling assuming only SnS2: 0.3043933890001448
+
+File: 2p5000.dat
+FWHM Coordinates: [18.72869978915, 56.72869978915]
+FWHM: 38.0
+EDDP Integral: 22.06956839156033
+Rho from Integral: 0.5807781155673771
+Relative Filling assuming only MPTMS: 1.6900021913358163
+Relative Filling assuming only SnS2: 0.4777854457108774
+1.3nm surface density assuming only SnS2: 0.28397713565493077
+1.3nm surface filling assuming only SnS2: 0.23361786316283623
+
+File: 3p0000.dat
+FWHM Coordinates: [18.22869978915, 77.22869978915]
+FWHM: 59.0
+EDDP Integral: 31.342602361671524
+Rho from Integral: 0.5312305485029072
+Relative Filling assuming only MPTMS: 1.5458240712072553
+Relative Filling assuming only SnS2: 0.4370244291035962
+1.3nm surface density assuming only SnS2: 0.26263946905456154
+1.3nm surface filling assuming only SnS2: 0.21606412573055037
+
+File: 3p0_exSitu000.dat
+FWHM Coordinates: [19.22869978915, 84.22869978915]
+FWHM: 65.0
+EDDP Integral: 35.70262903592144
+Rho from Integral: 0.5492712159372529
+Relative Filling assuming only MPTMS: 1.5983204836580236
+Relative Filling assuming only SnS2: 0.4518658428896854
+1.3nm surface density assuming only SnS2: 0.2740957122938538
+1.3nm surface filling assuming only SnS2: 0.22548876852534672
+
