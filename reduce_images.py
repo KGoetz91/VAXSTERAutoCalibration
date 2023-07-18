@@ -95,7 +95,7 @@ class BaseOneDDataSet:
     
     def __mul__(self,value):
         if isinstance(value,Number):
-            new_header = self.header+"#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
+            new_header = self._header+"#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
             new_y = np.multiply(self.y,value)
             new_error = np.multiply(self.error,value)
             return BaseOneDDataSet(np.array(self.x), new_y,error=new_error,name=self.name,header=new_header)
@@ -104,7 +104,7 @@ class BaseOneDDataSet:
 
     def __truediv__(self,value):
         if isinstance(value,Number):
-            new_header = self.header+"#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
+            new_header = self._header+"#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
             new_y = np.divide(self.y,value)
             new_error = np.divide(self.error,value)
             return BaseOneDDataSet(np.array(self.x), new_y,error=new_error,name=self.name,header=new_header)
@@ -121,7 +121,7 @@ class BaseOneDDataSet:
         y1_new = y1_new[y1_new != None]
         e1_new = e1[x1>=x_min]
         x1_new = x1[x1>=x_min]
-        e1_new = e1[x1_new<=x_max]
+        e1_new = e1_new[x1_new<=x_max]
         x1_new = x1_new[x1_new<=x_max]
         
         y_spline = []
@@ -249,9 +249,40 @@ class BaseOneDDataSet:
         if type(error) == type(None):
             self.error = np.sqrt(y)
         else:
-            self.error = error
+            if len(error) == len(x):
+                self.error = error
+            else:
+                self.error = np.sqrt(y)
         self._header=header
         self.name = name
+
+    def write_data_nm(self, filename):
+        
+        data = zip(self.x,self.y,self.error)
+        
+        with open(filename,'w') as outputfile:
+            outputfile.write(self._header)
+            outputfile.write('#Created: {}\n'.format(datetime.now()))
+            outputfile.write('#Q[nm^-1]\tIntensity[cm^-1]\tError\n')
+            
+            for line in data:
+                for point in line:
+                    outputfile.write("{}\t".format(point))
+                outputfile.write("\n")
+
+    def write_data_AA(self, filename):
+        
+        data = zip(self.x/10,self.y,self.error)
+        
+        with open(filename,'w') as outputfile:
+            outputfile.write(self._header)
+            outputfile.write('#Created: {}\n'.format(datetime.now()))
+            outputfile.write('#Q[AA^-1]\tIntensity[cm^-1]\tError\n')
+            
+            for line in data:
+                for point in line:
+                    outputfile.write("{}\t".format(point))
+                outputfile.write("\n")
 
     def plot_data(self):
         plt.clf()
