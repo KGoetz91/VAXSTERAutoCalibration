@@ -95,23 +95,13 @@ class BaseOneDDataSet:
     
     def __mul__(self,value):
         if isinstance(value,Number):
-            new_header = self.header+"#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
-            new_y = np.multiply(self.y,value)
-            new_error = np.multiply(self.error,value)
-            return BaseOneDDataSet(np.array(self.x), new_y,error=new_error,name=self.name,header=new_header)
-        else:
-            raise ValueError('Only numbers are possible.')
-
-    def __truediv__(self,value):
-        if isinstance(value,Number):
-            new_header = self.header+"#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
-            new_y = np.divide(self.y,value)
-            new_error = np.divide(self.error,value)
-            return BaseOneDDataSet(np.array(self.x), new_y,error=new_error,name=self.name,header=new_header)
+            self._header += "#Arithmetic operation multiplication: {}*{}\n".format(self.name, value)
+            self.y = self.y*value
+            return self
         else:
             raise ValueError('Only numbers are possible.')
     
-    def spline(self,x1,y1,e1,x2,y2,e2):
+    def spline(self,x1,y1,x2,y2):
         
         x_min = max(min(x1),min(x2))
         x_max = min(max(x1),max(x2))
@@ -119,16 +109,14 @@ class BaseOneDDataSet:
         y1_new = np.where(x1 >= x_min, y1, None)
         y1_new = np.where(x1 <= x_max, y1_new, None)
         y1_new = y1_new[y1_new != None]
-        e1_new = e1[x1>=x_min]
         x1_new = x1[x1>=x_min]
-        e1_new = e1[x1_new<=x_max]
         x1_new = x1_new[x1_new<=x_max]
         
         y_spline = []
         
-        x_spline, y_spline, e_spline = spline_data(x1_new,[x2,y2,e2])
+        x_spline, y_spline, e_spline = spline_data(x1_new,[x2,y2,y2])
         
-        return x_spline,y1_new,y_spline,e1_new,e_spline
+        return x_spline,y1_new,y_spline
 
     def make_linear(self, x_min=(-1)*np.inf, x_max=np.inf):
         min_limit = x_min if x_min > min(self.x) else min(self.x)
@@ -194,54 +182,46 @@ class BaseOneDDataSet:
         
     def __sub__(self,secondDataset):
         if issubclass(type(secondDataset),BaseOneDDataSet):
-            new_header = self._header + "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset.name)
-            x1 = np.array(self.x)
-            y1 = np.array(self.y)
-            e1 = np.array(self.error)
+            self._header += "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset.name)
+            x1 = self.x
+            y1 = self.y
+            e1 = self.error
             
-            x2 = np.array(secondDataset.x)
-            y2 = np.array(secondDataset.y)
-            e2 = np.array(secondDataset.error)
+            x2 = secondDataset.x
+            y2 = secondDataset.y
+            e2 = secondDataset.error
             
-            xspline,y3,y4,e3,e4 = self.spline(x1,y1,e1,x2,y2,e2)
-            new_y = np.subtract(y3,y4)
-            new_e = np.sqrt(np.power(e3,2)+np.power(e4,2))
-            new_x = xspline
+            xspline,y3,y4 = self.spline(x1,y1,x2,y2)
+            self.y = np.subtract(y3,y4)
+            self.x = xspline
             
         elif isinstance(secondDataset, Number):
-            new_header = self._header + "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset)
-            new_y = np.subtract(self.y,secondDataset)
-            new_x = np.array(self.x)
-            new_e = np.array(self.e)
+            self._header += "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset)
+            self.y = self.y-secondDataset
         else:
             raise ValueError('Subtraction only defined for numbers and other 1D-Datasets')
-        return BaseOneDDataSet(new_x, new_y,error=new_e,name=self.name,header=new_header)
+        return self
     
     def __add__(self,secondDataset):
         if issubclass(type(secondDataset),BaseOneDDataSet):
-            new_header = self._header + "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset.name)
-            x1 = np.array(self.x)
-            y1 = np.array(self.y)
-            e1 = np.array(self.error)
+            self._header += "#Arithmetic operation addition: {}+{}\n".format(self.name, secondDataset.name)
+            x1 = self.x
+            y1 = self.y
             
-            x2 = np.array(secondDataset.x)
-            y2 = np.array(secondDataset.y)
-            e2 = np.array(secondDataset.error)
+            x2 = secondDataset.x
+            y2 = secondDataset.y
             
-            xspline,y3,y4,e3,e4 = self.spline(x1,y1,e1,x2,y2,e2)
+            xspline,y3,y4 = self.spline(x1,y1,x2,y2)
                 
-            new_y = np.add(y3,y4)
-            new_e = np.sqrt(np.power(e3,2)+np.power(e4,2))
-            new_x = xspline
+            self.y = np.add(y3,y4)
+            self.x = xspline
             
         elif isinstance(secondDataset, Number):
-            new_header = self._header + "#Arithmetic operation subtraction: {}-{}\n".format(self.name, secondDataset)
-            new_y = np.add(self.y,secondDataset)
-            new_x = np.array(self.x)
-            new_e = np.array(self.e)
+            self._header += "#Arithmetic operation addition: {}-{}\n".format(self.name, secondDataset)
+            self.y = self.y+secondDataset
         else:
             raise ValueError('Subtraction only defined for numbers and other 1D-Datasets')
-        return BaseOneDDataSet(new_x, new_y,error=new_e,name=self.name,header=new_header)
+        return self
 
     def __init__(self,x,y,name = '', header='', error=None):
         self.x = x

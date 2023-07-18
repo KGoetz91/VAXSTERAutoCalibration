@@ -26,8 +26,6 @@ class ILLSAXS_TwoDDataset(TwoDDataset):
           raise ValueError('The given file {} does not exist.'.format(self.inputfile))
         with h5py.File(self.inputfile) as f:
           data = np.rot90(f["entry0/D22/Saxs/data3"][()][:,:,0])
-          # xdet = float(f['{:08d}/instrument/xdet/value'.format(number)][()])
-          # time = float(f['{:08d}/instrument/det/preset'.format(number)][()])
         return data
     
     def totalTime(self):
@@ -51,6 +49,8 @@ class ILLSAXS_TwoDReducer(TwoDReducer):
             self._header += '#{}\n'.format(data_file)
             time = new_frame.totalTime()
             image_sum = new_frame.calculateSum()
+            image_sum = new_frame.direct_beam_intensity()
+            print(image_sum)
             times.append(time)
             image_sums.append(image_sum)
         self.times = self._set_calib_parameter("Measurement time", times)
@@ -81,18 +81,23 @@ class ILLSAXS_TwoDReducer(TwoDReducer):
         
     def _init_gamma(self,gammaFiles, poni, mask):
         result = 0
+        error = 0
         
-        results = []
-        
-        for data_file in gammaFiles:
-            gamma_frame = self._load_data(data_file, self.poni, self.mask)
-            counts = gamma_frame.calculateSum()
-            time = gamma_frame.totalTime()
-            pixels = gamma_frame.pixels()
-            results.append(counts/(time*pixels))
+        if type(gammaFiles) == float:
+            result = gammaFiles
+            error = np.sqrt(gammaFiles)        
+        elif type(gammaFiles) != type(None):
+            results = []
             
-        result = np.mean(results)
-        error = np.sqrt(result)  #TODO this is not really correct yet
+            for data_file in gammaFiles:
+                gamma_frame = self._load_data(data_file, self.poni, self.mask)
+                counts = gamma_frame.calculateSum()
+                time = gamma_frame.totalTime()
+                pixels = gamma_frame.pixels()
+                results.append(counts/(time*pixels))
+                
+            result = np.mean(results)
+            error = np.sqrt(result)  #TODO this is not really correct yet
             
         self.darkCurrent = self._set_calib_parameter("Gamma Background", float(result))
         self.dcError = self._set_calib_parameter("Gamma Background error", float(error))
@@ -109,16 +114,10 @@ class ILLSAXS_TwoDReducer(TwoDReducer):
         print(self.sample)
         for i, frame in enumerate(self.frames):
             
-            scattering_intensity = frame.scatteringIntensity()
-            print(scattering_intensity)
             calibFactor = self.cf[i]/(self.times[i]*self.thickness[i]*self.transmissions[i])
             frameDC = self.times[i]*self.darkCurrent[i]
             frameDCerror = np.sqrt(self.times[i])*self.darkCurrent[i]
             tempFrame = (frame.sub(frameDC,frameDCerror)).mul(calibFactor)
-            
-            plt.clf()
-            plt.imshow(tempFrame.imageData,norm=LogNorm())
-            plt.show()
             
             if self.DB == True:
                 self._header += '#Changed DB position in Poni. New Poni now:\n'
@@ -127,16 +126,12 @@ class ILLSAXS_TwoDReducer(TwoDReducer):
                     with open(self.poni, 'r') as initial_poni:
                         for line in initial_poni:
                             if line.startswith('Poni1'):
-                                print(line)
                                 newline = 'Poni1: {}\n'.format(y*0.000075)
-                                print(newline)
                                 self._header += "#{}".format(newline)
                                 tempponi.write(newline)
                             elif line.startswith('Poni2'):
-                                print(line)
                                 newline = 'Poni2: {}\n'.format(x*0.000075)
                                 self._header += "#{}".format(newline)
-                                print(newline)
                                 tempponi.write(newline)
                             else:
                                 tempponi.write(line)
@@ -144,9 +139,9 @@ class ILLSAXS_TwoDReducer(TwoDReducer):
                 tempFrame.change_poni("./temp.poni")
             
             if i == 0:
-                totalSumOneD = OneDDataSet(tempFrame.integrateImage(), self.sample, header=self._header)
+                totalSumOneD = OneDDataSet(tempFrame.integrateImage(), "{}_frame{}".format(self.sample,i), header=self._header)
             else:
-                totalSumOneD = totalSumOneD+OneDDataSet(tempFrame.integrateImage(), self.sample, header=self._header)
+                totalSumOneD = totalSumOneD+OneDDataSet(tempFrame.integrateImage(), "{}_frame{}".format(self.sample,i), header=self._header)
         
         totalSumOneD = totalSumOneD * (1/len(self.frames))
             
